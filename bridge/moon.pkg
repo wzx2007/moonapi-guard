@@ -1,0 +1,7 @@
+import {
+  "moonapi/guard",
+}
+
+options(
+  link: { "js": { "exports": [ "analyze" ], "format": "esm" } },
+)

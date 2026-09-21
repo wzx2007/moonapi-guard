@@ -1,0 +1,16 @@
+{
+  "name": "moonapi-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MoonBit-powered OpenAPI compatibility analyzer",
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "node scripts/verify.mjs",
+    "demo": "node scripts/serve.mjs",
+    "check-api": "node bin/moonapi-guard.mjs"
+  },
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonapi/guard"
+
+// Values
+pub fn compare_text(String, String) -> Report
+
+// Errors
+
+// Types and methods
+pub(all) struct Finding {
+  severity : String
+  rule : String
+  operation : String
+  location : String
+  message : String
+} derive(ToJson)
+pub fn Finding::to_json(Self) -> Json
+
+pub(all) struct Report {
+  version : String
+  status : String
+  complete : Bool
+  breaking_count : Int
+  warning_count : Int
+  findings : Array[Finding]
+  errors : Array[String]
+} derive(ToJson)
+pub fn Report::to_json(Self) -> Json
+
+// Type aliases
+
+// Traits
