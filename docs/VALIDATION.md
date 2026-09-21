@@ -31,6 +31,8 @@ Automated Node tests call the shipping MoonBit-compiled JS module. The 102 behav
 
 SARIF schema source: https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json . Validation tooling was installed only in the build workspace, not added as a project runtime dependency. SARIF uses logical locations; platform-specific Code Scanning upload has not been verified.
 
-This record does not claim full OAS conformance, exhaustive proof of compatibility, Linux/macOS local verification, a completed hosted CI run, mobile browser verification, or organizer acceptance. The GitHub Actions configuration is supplied and will run after the repository is published.
+This record does not claim full OAS conformance, exhaustive proof of compatibility, Linux/macOS local verification, mobile browser verification, or organizer acceptance. The GitHub Actions configuration is supplied and will run after the repository is published.
 
 Reproduction: npm run verify. To modify fixtures: edit tests/cases.mjs, run node scripts/generate-tests.mjs, then moon fmt and npm run verify.
+
+Hosted CI: GitHub Actions Ubuntu / Node.js 22 run 35574403123 passed on commit 023ef6a: https://github.com/wzx2007/moonapi-guard/actions/runs/35574403123 . This supplements the Windows reference validation above.

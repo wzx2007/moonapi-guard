@@ -3,7 +3,9 @@
 **项目类型：** 开发者工具 / 可复用基础库。  
 **实现语言：** MoonBit（核心），JavaScript（文件 I/O、CLI、展示）。  
 **许可证：** Apache-2.0。  
-**参赛者、GitHub ID、公开仓库：** 待填写真实信息。
+**参赛者：** 魏泽瑄（北京邮电大学），团队 w1tness。  
+**GitHub ID：** wzx2007。  
+**公开仓库：** https://github.com/wzx2007/moonapi-guard
 
 ## 问题与目标
 

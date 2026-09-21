@@ -1,5 +1,11 @@
 # MoonAPI Guard
 
+参赛者：魏泽瑄（北京邮电大学）｜团队：w1tness｜GitHub：wzx2007。
+
+项目由参赛者确定目标并指导，AI 代理完成主要编码、测试、文档和工程验证。
+
+[下载 v0.2.0 可运行发布包](https://github.com/wzx2007/moonapi-guard/releases/tag/v0.2.0) · [GitHub Actions](https://github.com/wzx2007/moonapi-guard/actions)
+
 **用 MoonBit 检查 OpenAPI 3.0 接口升级的兼容性风险。**
 
 输入旧版、新版 JSON 描述，得到可定位、可解释的变更报告。核心判断、引用解析、输入检查和报告模型均由 MoonBit 实现；Node.js 仅负责文件读写、命令行和报告展示。浏览器与 CLI 运行同一份 MoonBit 编译产物。
