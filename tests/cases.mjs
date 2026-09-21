@@ -63,7 +63,7 @@ mutate('response status added',d=>d.paths['/orders'].get.responses['404']={descr
 {const a=documentWithSchema({type:'string'},'response'),b=base();add('response body removed',a,b,'breaking','RESPONSE_BODY_REMOVED');}
 mutate('server changed',d=>d.servers=[{url:'https://api.example.test'}],'incomplete','SERVERS_CHANGED');
 mutate('operation id changed',d=>d.paths['/orders'].get.operationId='listOrders','incomplete','OPERATION_ID_CHANGED');
-mutate('auth cannot silently pass',d=>d.security=[{bearer:[]}],'incomplete','SECURITY_REVIEW');
+mutate('auth cannot silently pass',d=>{d.security=[{bearer:[]}];d.components={securitySchemes:{bearer:{type:'http',scheme:'bearer'}}}},'breaking','SECURITY_TIGHTENED');
 mutate('callbacks not silently skipped',d=>d.paths['/orders'].get.callbacks={},'incomplete','CALLBACK_REVIEW');
 schemas('allOf not silently skipped',{allOf:[{type:'string'}]},{allOf:[{type:'string'}]},'incomplete','UNSUPPORTED_SCHEMA');
 schemas('readOnly explicitly unsupported',{type:'string',readOnly:true},{type:'string',readOnly:true},'incomplete','UNSUPPORTED_SCHEMA');
@@ -91,3 +91,37 @@ mutate('malformed security scopes',d=>d.security=[{bearer:'write'}],'invalid');
 schemas('exclusive bound requires bound',{type:'number'},{type:'number',exclusiveMinimum:true},'invalid');
 schemas('constraint type mismatch reviewed',{type:'string',minimum:2},{type:'string',minimum:2},'incomplete','CONSTRAINT_TYPE');
 {const a=documentWithSchema({type:'string'},'response'),b=structuredClone(a);a.paths['/orders'].get.responses['200'].content['text/plain']={schema:{type:'string'}};add('response media removal is reviewed',a,b,'incomplete','RESPONSE_MEDIA_REMOVED');}
+
+export function withSecurity(requirements){
+ const d=base();d.security=requirements;
+ d.components={securitySchemes:{
+  a:{type:'http',scheme:'bearer'},b:{type:'apiKey',in:'header',name:'X-Key'},
+  oauth:{type:'oauth2',flows:{clientCredentials:{tokenUrl:'https://auth.example.test/token',scopes:{read:'Read',write:'Write'}}}}
+ }};
+ return d;
+}
+function auth(name,oldReq,newReq,status,rule){add(name,withSecurity(oldReq),withSecurity(newReq),status,rule);}
+auth('unchanged auth is compatible',[{a:[]}],[{a:[]}],'compatible');
+auth('auth removed is compatible',[{a:[]}],[],'compatible');
+auth('anonymous alternative preserved',[{}, {a:[]}],[{}],'compatible');
+auth('anonymous access removed',[{}, {a:[]}],[{a:[]}],'breaking','SECURITY_TIGHTENED');
+auth('OR alternative removed',[{a:[]},{b:[]}],[{a:[]}],'breaking','SECURITY_TIGHTENED');
+auth('OR alternative added',[{a:[]}],[{a:[]},{b:[]}],'compatible');
+auth('AND credential added',[{a:[]}],[{a:[],b:[]}],'breaking','SECURITY_TIGHTENED');
+auth('AND credential removed',[{a:[],b:[]}],[{a:[]}],'compatible');
+auth('OAuth scopes increased',[{oauth:['read']}],[{oauth:['read','write']}],'breaking','SECURITY_TIGHTENED');
+auth('OAuth scopes reduced',[{oauth:['read','write']}],[{oauth:['read']}],'compatible');
+auth('OAuth scopes reordered',[{oauth:['read','write']}],[{oauth:['write','read']}],'compatible');
+{const a=withSecurity([{a:[]}]),b=clone(a);a.paths['/orders'].get.security=[];b.paths['/orders'].get.security=[];b.security=[{a:[],b:[]}];add('operation disables inherited security',a,b,'compatible');}
+{const a=withSecurity([{a:[]}]),b=clone(a);a.paths['/orders'].get.security=[];add('removing override inherits required credentials',a,b,'breaking','SECURITY_TIGHTENED');}
+{const a=withSecurity([{b:[]}]),b=clone(a);b.components.securitySchemes.b.name='X-New-Key';add('credential wire definition changed',a,b,'incomplete','SECURITY_SCHEME_CHANGED');}
+{const a=withSecurity([{a:[]}]),b=clone(a);b.components.securitySchemes.a.description='updated documentation';add('auth description-only change',a,b,'compatible');}
+{const a=withSecurity([{a:[]}]);delete a.components.securitySchemes.a;add('undefined auth scheme rejected',a,a,'invalid');}
+{const a=withSecurity([{a:['read']}]);add('HTTP auth cannot have OAuth scopes',a,a,'invalid');}
+{const a=withSecurity([{a:[]}]);a.components.securitySchemes.a.scheme='custom';add('unknown HTTP auth semantics reviewed',a,a,'incomplete','SECURITY_SCHEME_REVIEW');}
+{const a=withSecurity(Array.from({length:65},()=>({a:[]})));add('auth alternatives bounded',a,a,'invalid');}
+mutate('malformed response status rejected',d=>d.paths['/orders'].get.responses={'2ab':{description:'bad'}},'invalid');
+mutate('numeric response description rejected',d=>d.paths['/orders'].get.responses['200'].description=42,'invalid');
+mutate('responses containing only extensions rejected',d=>d.paths['/orders'].get.responses={'x-note':{}},'invalid');
+mutate('nonboolean parameter explode rejected',d=>d.paths['/orders'].get.parameters=[{...p(),explode:'yes'}],'invalid');
+{const a=documentWithSchema({type:'string'});a.paths['/orders'].get.requestBody.content={};add('empty request content rejected',a,a,'invalid');}

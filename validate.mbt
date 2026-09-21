@@ -222,6 +222,9 @@ fn validate_content(
     ctx.errors.push(path + ": content must be an object")
     return
   }
+  if keys(content).is_empty() {
+    ctx.errors.push(path + ": content must not be empty")
+  }
   for media in keys(content) {
     let value = field(content, media)
     let p = pointer(path, media)
@@ -295,6 +298,13 @@ fn parameters(
         field(param, "required") != Json::boolean(false) {
         ctx.errors.push(path + ": parameter required must be boolean")
       }
+      for flag in ["explode", "allowReserved", "allowEmptyValue"] {
+        if has(param, flag) &&
+          field(param, flag) != Json::boolean(true) &&
+          field(param, flag) != Json::boolean(false) {
+          ctx.errors.push(path + ": " + flag + " must be boolean")
+        }
+      }
       if has(param, "schema") == has(param, "content") {
         ctx.errors.push(
           path + ": parameter needs exactly one of schema or content",
@@ -354,15 +364,6 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
     ctx.errors.push(side + ": paths must be an object")
     return
   }
-  if has(doc, "security") && !arr(field(doc, "security")).is_empty() {
-    ctx.add(
-      "warning",
-      "SECURITY_REVIEW",
-      "document",
-      "/security",
-      "Authentication requirements require manual review (" + side + ")",
-    )
-  }
   for route in keys(paths) {
     if route.has_prefix("x-") {
       continue
@@ -402,16 +403,13 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
           side + pointer(op_path, "security"),
         )
       }
-      if has(operation, "security") &&
-        !arr(field(operation, "security")).is_empty() {
-        ctx.add(
-          "warning",
-          "SECURITY_REVIEW",
-          op,
-          pointer(op_path, "security"),
-          "Operation authentication requires manual review (" + side + ")",
-        )
-      }
+      validate_effective_security(
+        ctx,
+        doc,
+        operation,
+        op,
+        pointer(op_path, "security"),
+      )
       if has(operation, "callbacks") {
         ctx.add(
           "warning",
@@ -448,7 +446,7 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
         }
       }
       let responses = field(operation, "responses")
-      if !is_object(responses) || keys(responses).is_empty() {
+      if !is_object(responses) || !keys(responses).any(k => !k.has_prefix("x-")) {
         ctx.errors.push(
           side + op_path + ": responses must be a nonempty object",
         )
@@ -458,6 +456,10 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
           continue
         }
         let rp = pointer(pointer(op_path, "responses"), status)
+        if status != "default" && !valid_status_code(status) {
+          ctx.errors.push(rp + ": invalid response status key")
+          continue
+        }
         if status == "default" || status.contains("X") {
           ctx.add(
             "warning", "RESPONSE_RANGE", op, rp, "Default and status-range response matching require review",
@@ -467,7 +469,8 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
           is Some(response) else {
           continue
         }
-        if !is_object(response) || !has(response, "description") {
+        if !is_object(response) ||
+          !(field(response, "description") is String(_)) {
           ctx.errors.push(side + rp + ": response object requires description")
         }
         if has(response, "content") {
@@ -501,4 +504,18 @@ fn validate_document(ctx : Context, doc : Json, side : String) -> Unit {
       }
     }
   }
+}
+
+///|
+fn valid_status_code(code : String) -> Bool {
+  if code.length() != 3 {
+    return false
+  }
+  let chars = code.to_array()
+  chars[0] >= '1' &&
+  chars[0] <= '5' &&
+  (
+    (chars[1] == 'X' && chars[2] == 'X') ||
+    (chars[1] >= '0' && chars[1] <= '9' && chars[2] >= '0' && chars[2] <= '9')
+  )
 }

@@ -2,7 +2,7 @@
 
 ## 输入约定
 
-支持 OpenAPI 3.0.0–3.0.4 的 JSON，必需 info.title、info.version 和 paths。提供面向已支持结构的输入检查，**不是完整 OAS 合规验证器**；正式接入前应先通过独立的 OpenAPI linter。JSON 重复键遵循 MoonBit JSON 解析器的行为，项目不对重复键输入提供兼容性保证。
+支持 OpenAPI 3.0.0–3.0.4 的 JSON，必需 info.title、info.version 和 paths。提供面向已支持结构的输入检查，**不是完整 OAS 合规验证器**；正式接入前应先通过独立的 OpenAPI linter。JSON 重复键遵循 MoonBit JSON 解析器的行为，项目不对重复键输入提供兼容性保证。v0.2 进一步校验响应状态码、响应描述类型、参数布尔字段及非空 content。
 
 YAML、OpenAPI 2.0/3.1、远程文件加载不在第一版范围内。单份文本最多 2,000,000 个 UTF-16 代码单元（实际限制由 MoonBit String.length 决定）；Node 读文件前另外设置 8 MB 上限。JSON 解析深度 96；Schema 深度 48；一次比较共享 5,000 次 Schema 访问预算。超过 Schema 预算输出 warning；输入大小/JSON 深度错误输出 invalid。
 
@@ -42,7 +42,8 @@ YAML、OpenAPI 2.0/3.1、远程文件加载不在第一版范围内。单份文�
 | CONSTRAINT_REVIEW | warning | pattern / format / multipleOf 不能用文本比较证明包含关系 |
 | ENUM_BOUND_REVIEW | warning | 有限枚举与边界交互需要进一步检查 |
 | SERVERS_CHANGED / OPERATION_ID_CHANGED | warning | 部署地址或生成 SDK 方法名变化 |
-| SECURITY_REVIEW | warning | 鉴权需求不做自动包含判断 |
+| SECURITY_TIGHTENED | breaking | 原先可用的凭据/权限组合不再被接受 |
+| SECURITY_SCHEME_CHANGED / SECURITY_SCHEME_REVIEW | warning | 凭据定义变化或非 basic/bearer 的 HTTP 鉴权 |
 | UNSUPPORTED_SCHEMA / IMPLICIT_TYPE / CONSTRAINT_TYPE | warning | 组合、可见性、未知关键字或不常规类型约束 |
 | UNSUPPORTED_REF / CYCLIC_REF / REF_LIMIT | warning | 引用超出支持范围 |
 | SCHEMA_DEPTH / WORK_LIMIT | warning | 达到有界遍历上限 |
@@ -69,3 +70,12 @@ YAML、OpenAPI 2.0/3.1、远程文件加载不在第一版范围内。单份文�
 - [MoonBit 文档](https://docs.moonbitlang.com/en/stable/)：语言、JSON 标准库和 JavaScript 导出。
 
 规则为本项目自行实现；不是上述规范组织的认证产品。
+
+
+## 鉴权支持（v0.2）
+
+按 OpenAPI Security Requirement 的声明语义：数组项是 OR，同一对象内的 scheme 是 AND，每个 scheme 的 scopes 也必须全部满足。每个旧认证分支都需要有一个新分支接受其已保证的凭据和 scopes。操作级 security 覆盖根级配置，空数组表示取消继承。匿名分支 {} 被保留。
+
+scheme 名称按身份标识比较，不推断重命名后的凭据等价性；相同名称的 type/in/name/scheme/flows/openIdConnectUrl 变化输出复核。HTTP basic/bearer、API key、OAuth2 和 OpenID Connect 的声明可参与比较；不验证真实令牌、授权服务器、flow 全部字段或可访问性。未知 HTTP scheme 提示复核。命名引用缺失和非 OAuth scheme 携带 scopes 判为无效。
+
+资源限制：每个 security 数组最多 64 个替代分支，每个分支最多 16 个 scheme，每个 scheme 最多 64 个 scope。超限为 invalid。CLI/网页另使用隔离 Worker 和超时保护。

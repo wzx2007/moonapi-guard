@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "MoonAPI Guard",
+          "version": "0.2.0",
+          "rules": [
+            {
+              "id": "BOUND_INCOMPATIBLE",
+              "shortDescription": {
+                "text": "BOUND INCOMPATIBLE"
+              }
+            },
+            {
+              "id": "ENUM_INCOMPATIBLE",
+              "shortDescription": {
+                "text": "ENUM INCOMPATIBLE"
+              }
+            },
+            {
+              "id": "OPERATION_REMOVED",
+              "shortDescription": {
+                "text": "OPERATION REMOVED"
+              }
+            },
+            {
+              "id": "PARAMETER_REQUIRED",
+              "shortDescription": {
+                "text": "PARAMETER REQUIRED"
+              }
+            },
+            {
+              "id": "REQUIRED_PROPERTY",
+              "shortDescription": {
+                "text": "REQUIRED PROPERTY"
+              }
+            },
+            {
+              "id": "TYPE_INCOMPATIBLE",
+              "shortDescription": {
+                "text": "TYPE INCOMPATIBLE"
+              }
+            }
+          ]
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": []
+        }
+      ],
+      "results": [
+        {
+          "ruleId": "OPERATION_REMOVED",
+          "ruleIndex": 2,
+          "level": "error",
+          "message": {
+            "text": "GET /health: An existing operation is no longer declared"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1health/get",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /health",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "BOUND_INCOMPATIBLE",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: request: maximum narrows the receiving contract"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/parameters/query:limit/schema/maximum",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "PARAMETER_REQUIRED",
+          "ruleIndex": 3,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: Optional parameter becomes required: query:status"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/parameters/query:status",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "ENUM_INCOMPATIBLE",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: request: source values are not covered by the target enum"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/parameters/query:status/schema/enum",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "REQUIRED_PROPERTY",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: response: target requires property 'status' but the source does not guarantee it"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/responses/200/content/application~1json/schema/items/properties/status",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "TYPE_INCOMPATIBLE",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: response: source type 'string' is not accepted by target type 'integer'"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/responses/200/content/application~1json/schema/items/properties/id/type",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        },
+        {
+          "ruleId": "ENUM_INCOMPATIBLE",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "GET /orders: response: source values are not covered by the target enum"
+          },
+          "locations": [
+            {
+              "logicalLocations": [
+                {
+                  "fullyQualifiedName": "/paths/~1orders/get/responses/200/content/application~1json/schema/items/properties/status/enum",
+                  "kind": "member"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "operation": "GET /orders",
+            "severity": "breaking"
+          }
+        }
+      ],
+      "properties": {
+        "analysisStatus": "breaking",
+        "complete": true
+      }
+    }
+  ]
+}

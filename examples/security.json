@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Northstar Orders API",
-    "version": "1.2.0"
+    "version": "2.0.0"
   },
   "paths": {
     "/orders": {
@@ -43,16 +43,14 @@
                   }
                 }
               }
-            },
-            "headers": {
-              "X-Request-ID": {
-                "schema": {
-                  "type": "string"
-                }
-              }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/health": {
@@ -87,6 +85,12 @@
           }
         },
         "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

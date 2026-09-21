@@ -16,15 +16,15 @@ Report (ToJson)
         │
         ▼
 MoonBit JS bridge (analyze)
-  ├── Node CLI: disk I/O, exit policy, report formatting
-  └── browser: text/file input, filters, HTML/JSON download
+  ├── Node CLI worker: disk I/O, timeout, atomic reports, exit policy
+  └── browser worker: cancellable analysis, search, paged findings, HTML/JSON download
 ```
 
 The engine is pure: no network, filesystem, JavaScript FFI, wall clock, or global mutable state. Each request creates its own Context. Output traversal uses sorted keys and duplicate findings are suppressed, giving deterministic reports. Structural JSON equality ignores object member order.
 
 The bridge exports only `analyze(old_text, new_text) -> JSON string`. Both host surfaces use the exact same compiled module. MoonBit behavior tests run under wasm-gc and JavaScript; the Node integration tests validate the shipping JS bridge and the real CLI process.
 
-The JSON model is retained instead of projecting into a lossy OpenAPI AST. This preserves unknown schema keywords so they can be flagged as gaps. Standard local Reference Objects resolve lazily at use sites. Depth and shared work budgets bound recursive graphs; v0.1 deliberately does not claim coinductive recursive-schema inclusion.
+The JSON model is retained instead of projecting into a lossy OpenAPI AST. This preserves unknown schema keywords so they can be flagged as gaps. Standard local Reference Objects resolve lazily at use sites. Depth and shared work budgets bound recursive graphs; v0.2 deliberately does not claim coinductive recursive-schema inclusion.
 
 Default policy is fail closed on known analysis gaps. The caller can explicitly choose a weaker reporting policy, but the report continues to expose warnings and complete=false. Invalid input never becomes a successful result through a CLI policy override.
 
@@ -38,4 +38,6 @@ The static demo uses system fonts and local files only. Its server binds to 127.
 4. Run npm run verify. Update docs/SUPPORT.md and the rule table.
 5. Preserve a warning until the entire advertised construct is supported.
 
-Potential next steps: a tested security-requirement comparator, witness-producing enum/bound satisfiability, conservative allOf flattening, and recursive reference memoization. These are future work, not v0.1 features.
+Potential next steps: witness-producing enum/bound satisfiability, conservative allOf flattening, and recursive reference memoization. These are future work, not v0.2 features.
+
+Auth comparisons apply inclusion over declared OR-of-AND credential/scope alternatives. A truth-table oracle independently checks 225 combinations. The browser lifecycle controller is separately tested for cancellation, stale responses, timeouts and worker errors; a monotonically increasing input revision also prevents stale file/sample loads from replacing current edits. CLI runs the same engine in a worker thread.

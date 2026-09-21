@@ -504,10 +504,10 @@ test "operation id changed" {
 test "auth cannot silently pass" {
   let r = @guard.compare_text(
     "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}}}",
-    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"bearer\":[]}]}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"bearer\":[]}],\"components\":{\"securitySchemes\":{\"bearer\":{\"type\":\"http\",\"scheme\":\"bearer\"}}}}",
   )
-  assert_eq(r.status, "incomplete")
-  assert_true(r.findings.any(f => f.rule == "SECURITY_REVIEW"))
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
 }
 
 ///|
@@ -776,4 +776,244 @@ test "response media removal is reviewed" {
   )
   assert_eq(r.status, "incomplete")
   assert_true(r.findings.any(f => f.rule == "RESPONSE_MEDIA_REMOVED"))
+}
+
+///|
+test "unchanged auth is compatible" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "auth removed is compatible" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "anonymous alternative preserved" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{},{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "anonymous access removed" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{},{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
+}
+
+///|
+test "OR alternative removed" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]},{\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
+}
+
+///|
+test "OR alternative added" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]},{\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "AND credential added" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[],\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
+}
+
+///|
+test "AND credential removed" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[],\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "OAuth scopes increased" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"read\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"read\",\"write\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
+}
+
+///|
+test "OAuth scopes reduced" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"read\",\"write\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"read\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "OAuth scopes reordered" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"read\",\"write\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"oauth\":[\"write\",\"read\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "operation disables inherited security" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"security\":[]}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"security\":[]}}},\"security\":[{\"a\":[],\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "removing override inherits required credentials" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"security\":[]}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "breaking")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_TIGHTENED"))
+}
+
+///|
+test "credential wire definition changed" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"b\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-New-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "incomplete")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_SCHEME_CHANGED"))
+}
+
+///|
+test "auth description-only change" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\",\"description\":\"updated documentation\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "compatible")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "undefined auth scheme rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "HTTP auth cannot have OAuth scopes" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[\"read\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[\"read\"]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "unknown HTTP auth semantics reviewed" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"custom\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"custom\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "incomplete")
+  assert_true(r.findings.any(f => f.rule == "SECURITY_SCHEME_REVIEW"))
+}
+
+///|
+test "auth alternatives bounded" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}},\"security\":[{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]},{\"a\":[]}],\"components\":{\"securitySchemes\":{\"a\":{\"type\":\"http\",\"scheme\":\"bearer\"},\"b\":{\"type\":\"apiKey\",\"in\":\"header\",\"name\":\"X-Key\"},\"oauth\":{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://auth.example.test/token\",\"scopes\":{\"read\":\"Read\",\"write\":\"Write\"}}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "malformed response status rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"2ab\":{\"description\":\"bad\"}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "numeric response description rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":42}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "responses containing only extensions rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"x-note\":{}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "nonboolean parameter explode rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"parameters\":[{\"name\":\"filter\",\"in\":\"query\",\"required\":false,\"schema\":{\"type\":\"string\"},\"explode\":\"yes\"}]}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
+}
+
+///|
+test "empty request content rejected" {
+  let r = @guard.compare_text(
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"requestBody\":{\"content\":{}}}}}}",
+    "{\"openapi\":\"3.0.3\",\"info\":{\"title\":\"Orders\",\"version\":\"1\"},\"paths\":{\"/orders\":{\"get\":{\"responses\":{\"200\":{\"description\":\"OK\"}},\"requestBody\":{\"content\":{}}}}}}",
+  )
+  assert_eq(r.status, "invalid")
+  assert_true(r.errors.is_empty() == (r.status != "invalid"))
 }

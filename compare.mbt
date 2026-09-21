@@ -42,7 +42,7 @@ fn finish(ctx : Context) -> Report {
     "compatible"
   }
   {
-    version: "0.1.0",
+    version: "0.2.0",
     status,
     complete: warnings == 0 && ctx.errors.is_empty(),
     breaking_count: breaking,
@@ -84,6 +84,7 @@ fn compare_paths(ctx : Context, old_doc : Json, new_doc : Json) -> Unit {
       }
       let old_op = field(old_item, verb)
       let new_op = field(new_item, verb)
+      compare_security(ctx, old_doc, new_doc, old_op, new_op, op, path)
       if !same(field(old_item, "servers"), field(new_item, "servers")) ||
         !same(field(old_op, "servers"), field(new_op, "servers")) {
         ctx.add(

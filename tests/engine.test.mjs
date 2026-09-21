@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {analyze} from '../dist/engine.js';
-import {cases,documentWithSchema,base} from './cases.mjs';
+import {cases,documentWithSchema,base,withSecurity} from './cases.mjs';
 const run=(a,b)=>JSON.parse(analyze(JSON.stringify(a),JSON.stringify(b)));
 for(const c of cases)test(c.name,()=>{const r=JSON.parse(analyze(c.oldText,c.newText));assert.equal(r.status,c.status,JSON.stringify(r));if(c.rule)assert.ok(r.findings.some(f=>f.rule===c.rule));});
 test('bound direction: 200 deterministic generated comparisons',()=>{
@@ -29,6 +29,17 @@ test('report order is deterministic and JSON object order irrelevant',()=>{
 });
 test('input depth bounded',()=>{const s='['.repeat(100)+'0'+']'.repeat(100);assert.equal(JSON.parse(analyze(s,JSON.stringify(base()))).status,'invalid');});
 test('input size bounded',()=>assert.equal(JSON.parse(analyze(' '.repeat(2_000_001),'{}')).status,'invalid'));
+test('auth OR/AND inclusion: 225 comparisons against independent credential truth tables',()=>{
+ const branches=[{}, {a:[]}, {b:[]}, {a:[],b:[]}];
+ const alternatives=mask=>branches.filter((_,i)=>mask&(1<<i));
+ const accepts=(list,credentials)=>list.some(branch=>Object.keys(branch).every(name=>credentials.includes(name)));
+ const credentials=[[],['a'],['b'],['a','b']];
+ for(let oldMask=1;oldMask<16;oldMask++)for(let newMask=1;newMask<16;newMask++){
+  const a=alternatives(oldMask),b=alternatives(newMask);
+  const included=credentials.every(c=>!accepts(a,c)||accepts(b,c));
+  assert.equal(run(withSecurity(a),withSecurity(b)).status,included?'compatible':'breaking',oldMask+' -> '+newMask);
+ }
+});
 test('branching recursive reference graph is bounded',()=>{
  const d=documentWithSchema({$ref:'#/components/schemas/Node'});
  d.components={schemas:{Node:{type:'object',properties:{a:{$ref:'#/components/schemas/Node'},b:{$ref:'#/components/schemas/Node'}}}}};
