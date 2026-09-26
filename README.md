@@ -54,6 +54,10 @@ node bin/moonapi-guard.mjs OLD.json NEW.json --fail-on breaking
 
 默认格式为 text；支持 text / json / markdown / html / sarif。
 
+文件名以 `-` 开头时，将所有选项放在 `--` 前，例如：
+`node bin/moonapi-guard.mjs --format json -- -old.json -new.json`。
+分隔符之后的 `--help`、`--version` 也会作为文件名处理。
+
 | 退出码 | 含义 |
 |---|---|
 | 0 | 满足当前策略；不等于实际服务一定兼容 |

@@ -21,6 +21,19 @@ test('invalid policy rejected',()=>assert.equal(run(...inputs,'--fail-on','every
 test('missing input rejected',()=>assert.equal(run('examples/old.json').status,2));
 test('missing file rejected',()=>assert.equal(run('missing.json','examples/old.json').status,2));
 test('help and version',()=>{assert.equal(run('--help').status,0);assert.match(run('--help').stdout,/Exit codes/);assert.equal(run('--version').stdout.trim(),'0.2.0');});
+test('end-of-options supports dash-prefixed and help-like filenames',()=>{
+ const dir=mkdtempSync(path.join(tmpdir(),'moonapi-arguments-'));
+ try {
+  const content=readFileSync(path.join(cwd,'examples/old.json'));
+  for(const name of ['--help','--version','-new.json'])writeFileSync(path.join(dir,name),content);
+  for(const name of ['--help','--version']) {
+   const result=spawnSync(process.execPath,[path.join(cwd,'bin/moonapi-guard.mjs'),'--format','json','--',name,'-new.json'],{cwd:dir,encoding:'utf8'});
+   assert.equal(result.status,0,result.stderr);
+   assert.equal(JSON.parse(result.stdout).status,'compatible');
+  }
+  assert.equal(run('--','examples/old.json').status,2);
+ } finally {rmSync(dir,{recursive:true,force:true});}
+});
 test('write report, invalid inputs, BOM, paths with spaces',()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'moonapi-test-'));
  try{

@@ -7,6 +7,7 @@ const VERSION='0.2.0';
 const HELP=`MoonAPI Guard — OpenAPI 3.0 compatibility checks powered by MoonBit
 
 Usage: node bin/moonapi-guard.mjs OLD.json NEW.json [options]
+       node bin/moonapi-guard.mjs [options] -- OLD.json NEW.json
 
   --format text|json|markdown|html|sarif  Report format (default: text)
   --output FILE                         Write report atomically
@@ -23,12 +24,15 @@ function fail(message){console.error('MoonAPI Guard: '+message);process.exitCode
 process.stdout.on('error',error=>{if(error.code==='EPIPE')process.exit(0);else fail(error.message);});
 async function main(){
  const args=process.argv.slice(2);
- if(args.includes('--help')){console.log(HELP);return;}
- if(args.includes('--version')){console.log(VERSION);return;}
+ const delimiter=args.indexOf('--');
+ const optionArgs=delimiter<0?args:args.slice(0,delimiter);
+ if(optionArgs.includes('--help')){console.log(HELP);return;}
+ if(optionArgs.includes('--version')){console.log(VERSION);return;}
  const files=[];let format='text',output,policy='warning',timeoutMs=10000;
  const seen=new Set();
  for(let i=0;i<args.length;i++){
   const option=args[i];
+  if(option==='--'){files.push(...args.slice(i+1));break;}
   if(['--format','--output','--fail-on','--timeout-ms'].includes(option)){
    if(seen.has(option))throw Error('Duplicate option: '+option);
    seen.add(option);
