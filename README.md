@@ -136,3 +136,15 @@ node bin/moonapi-guard.mjs OLD.json NEW.json --timeout-ms 30000
 SARIF 2.1.0 使用逻辑路径，不伪造源文件行号。兼容 SARIF 的消费端可读取；本版本尚未验证 GitHub Code Scanning 上传，不能将该输出等同于已完成平台集成。
 
 CLI 超时默认 10 秒，可设 1–120000 毫秒；超时返回 2，不生成兼容性结论。网页分析可取消，编辑输入也会取消正在运行的分析。结果先显示 200 项，可搜索或继续加载。输出路径若指向任一输入文件（含硬链接）会被拒绝。
+
+Node.js 程序可复用隔离分析接口，并使用 `AbortSignal` 取消单个任务：
+
+```js
+import {runEngine} from './lib/run-engine.mjs';
+const controller = new AbortController();
+const pending = runEngine([oldText, newText], 10000, {signal: controller.signal});
+// 需要取消时调用 controller.abort()；pending 会以 AbortError 拒绝。
+const report = await pending;
+```
+
+完成、超时或取消都会终止该工作线程并清理监听器；取消不会生成兼容性结论，也不影响其他任务。
