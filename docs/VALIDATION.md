@@ -1,3 +1,11 @@
+# Validation record — v0.3.0, 2026-09-27
+
+Local full verification completed on 2026-09-27: moon check --deny-warn passed; 102 MoonBit tests passed on each of wasm-gc and JS; 148 Node tests passed. The tested MoonBit/Node versions remain those recorded in TOOLCHAIN.md. Seven independently tested changes extend file reading, CLI arguments, local server restrictions, rendering, CSV, worker cancellation and release packaging.
+
+The ZIP writer was independently checked with Python zipfile: CRCs and per-file SHA-256 digests passed. Browser interaction evidence below belongs to v0.2.0; v0.3.0 server and rendering changes are covered by automated tests. Current hosted CI status is visible in the repository Actions tab.
+
+## Previous v0.2.0 validation
+
 # Validation record — v0.2.0, 2026-09-21
 
 Reference environment: Windows x86-64, MoonBit and Node versions in TOOLCHAIN.md.

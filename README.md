@@ -4,13 +4,13 @@
 
 项目由参赛者确定目标并指导，AI 代理完成主要编码、测试、文档和工程验证。
 
-[下载 v0.2.0 可运行发布包](https://github.com/wzx2007/moonapi-guard/releases/tag/v0.2.0) · [GitHub Actions](https://github.com/wzx2007/moonapi-guard/actions)
+[下载 v0.3.0 可运行发布包](https://github.com/wzx2007/moonapi-guard/releases/tag/v0.3.0) · [GitHub Actions](https://github.com/wzx2007/moonapi-guard/actions)
 
 **用 MoonBit 检查 OpenAPI 3.0 接口升级的兼容性风险。**
 
 输入旧版、新版 JSON 描述，得到可定位、可解释的变更报告。核心判断、引用解析、输入检查和报告模型均由 MoonBit 实现；Node.js 仅负责文件读写、命令行和报告展示。浏览器与 CLI 运行同一份 MoonBit 编译产物。
 
-> v0.2.0 是明确限定范围的契约分析器，不是完整的 OpenAPI 验证器，也不证明服务端实际行为。无法可靠判断的已知结构会输出 warning，并将 `complete` 标为 `false`；默认 CI 策略会阻止这类结果。
+> v0.3.0 是明确限定范围的契约分析器，不是完整的 OpenAPI 验证器，也不证明服务端实际行为。无法可靠判断的已知结构会输出 warning，并将 `complete` 标为 `false`；默认 CI 策略会阻止这类结果。
 
 ## 直接运行交付包
 

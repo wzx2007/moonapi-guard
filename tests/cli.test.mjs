@@ -25,7 +25,7 @@ test('invalid format rejected',()=>assert.equal(run(...inputs,'--format','yaml')
 test('invalid policy rejected',()=>assert.equal(run(...inputs,'--fail-on','everything').status,2));
 test('missing input rejected',()=>assert.equal(run('examples/old.json').status,2));
 test('missing file rejected',()=>assert.equal(run('missing.json','examples/old.json').status,2));
-test('help and version',()=>{assert.equal(run('--help').status,0);assert.match(run('--help').stdout,/Exit codes/);assert.equal(run('--version').stdout.trim(),'0.2.0');});
+test('help and version',()=>{assert.equal(run('--help').status,0);assert.match(run('--help').stdout,/Exit codes/);assert.equal(run('--version').stdout.trim(),'0.3.0');});
 test('end-of-options supports dash-prefixed and help-like filenames',()=>{
  const dir=mkdtempSync(path.join(tmpdir(),'moonapi-arguments-'));
  try {

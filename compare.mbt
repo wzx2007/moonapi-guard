@@ -42,7 +42,7 @@ fn finish(ctx : Context) -> Report {
     "compatible"
   }
   {
-    version: "0.2.0",
+    version: "0.3.0",
     status,
     complete: warnings == 0 && ctx.errors.is_empty(),
     breaking_count: breaking,

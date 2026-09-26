@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0 - 2026-09-27
+
+- Bound input reads through one descriptor; enforce byte limits even if a file grows during reading.
+- Accept dash-prefixed filenames after the CLI `--` delimiter.
+- Restrict the local demo to expected Host and Origin values.
+- Escape Markdown metacharacters and terminal control sequences from input-derived report text.
+- Add CSV reports with summary/error rows and spreadsheet formula protection.
+- Support per-job AbortSignal cancellation and listener cleanup in the Node worker API.
+- Produce deterministic ZIP releases with a SHA-256 manifest and matching compiled engines.
+
+Compatibility rules remain the same as v0.2.0. Each improvement includes regression or integration coverage.
+
+
 ## 0.2.0 — 2026-09-21
 
 - MoonBit authentication inclusion checks: root inheritance, operation overrides, anonymous alternatives, OR/AND schemes and OAuth scopes. Changes to credential definitions remain review findings.

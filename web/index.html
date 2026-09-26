@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>MoonAPI Guard · 接口变更检查</title><link rel="stylesheet" href="/style.css"></head>
 <body>
-<header><a class="brand" href="/" aria-label="MoonAPI Guard 首页"><span class="mark">◒</span><strong>MoonAPI <span>Guard</span></strong></a><div class="header-right"><span class="live-dot"></span> 本地分析 <span class="version">v0.2.0</span></div></header>
+<header><a class="brand" href="/" aria-label="MoonAPI Guard 首页"><span class="mark">◒</span><strong>MoonAPI <span>Guard</span></strong></a><div class="header-right"><span class="live-dot"></span> 本地分析 <span class="version">v0.3.0</span></div></header>
 <main>
 <section class="intro"><div><p class="eyebrow">CONTRACTS CHANGE. CONFIDENCE STAYS.</p><h1>接口变了，<br>旧客户端还好吗？</h1><p class="lead">对比两份 OpenAPI 描述，找出可能破坏兼容性的改动。<br>请求与响应，按各自的兼容方向检查。</p></div><aside class="principle"><span class="tiny">兼容性检查的两个方向</span><div><span>旧请求</span><b>→</b><span>新服务端</span></div><div><span>新响应</span><b>→</b><span>旧客户端</span></div><p>MoonBit 核心引擎 · 数据留在浏览器</p></aside></section>
 <section class="workspace" aria-labelledby="workspace-title"><div class="section-top"><h2 id="workspace-title"><span class="step">01</span> 选择接口版本</h2><div class="presets"><label for="scenario">示例</label><select id="scenario"><option value="breaking">破坏性变更</option><option value="compatible">兼容性变更</option><option value="security">鉴权要求收紧</option><option value="review">需要人工复核</option></select><button id="load" class="quiet">载入示例</button></div></div>

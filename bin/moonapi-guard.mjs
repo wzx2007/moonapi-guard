@@ -3,7 +3,7 @@ import {readDocument} from '../lib/input.mjs';
 import {textReport,markdownReport,htmlReport,sarifReport,csvReport} from '../lib/render.mjs';
 import {protectInputs,atomicWrite} from '../lib/output.mjs';
 import {runEngine} from '../lib/run-engine.mjs';
-const VERSION='0.2.0';
+const VERSION='0.3.0';
 const HELP=`MoonAPI Guard — OpenAPI 3.0 compatibility checks powered by MoonBit
 
 Usage: node bin/moonapi-guard.mjs OLD.json NEW.json [options]
