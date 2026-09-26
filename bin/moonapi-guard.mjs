@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {readFileSync,statSync} from 'node:fs';
+import {readDocument} from '../lib/input.mjs';
 import {textReport,markdownReport,htmlReport,sarifReport} from '../lib/render.mjs';
 import {protectInputs,atomicWrite} from '../lib/output.mjs';
 import {runEngine} from '../lib/run-engine.mjs';
@@ -49,12 +49,7 @@ async function main(){
  if(!['text','json','markdown','html','sarif'].includes(format))throw Error('Unknown report format.');
  if(!['breaking','warning','none'].includes(policy))throw Error('Unknown --fail-on policy.');
  if(output)protectInputs(output,files);
- const inputs=files.map(file=>{
-  const stat=statSync(file);
-  if(!stat.isFile())throw Error('Input must be a regular file: '+file);
-  if(stat.size>8_000_000)throw Error('Input too large: '+file);
-  return new TextDecoder('utf-8',{fatal:true}).decode(readFileSync(file)).replace(/^\uFEFF/,'');
- });
+ const inputs=files.map(file=>readDocument(file));
  const report=await runEngine(inputs,timeoutMs);
  const rendered=format==='json'?JSON.stringify(report,null,2):
   format==='sarif'?JSON.stringify(sarifReport(report),null,2):
