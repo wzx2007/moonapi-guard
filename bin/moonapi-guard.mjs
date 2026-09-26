@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {readDocument} from '../lib/input.mjs';
-import {textReport,markdownReport,htmlReport,sarifReport} from '../lib/render.mjs';
+import {textReport,markdownReport,htmlReport,sarifReport,csvReport} from '../lib/render.mjs';
 import {protectInputs,atomicWrite} from '../lib/output.mjs';
 import {runEngine} from '../lib/run-engine.mjs';
 const VERSION='0.2.0';
@@ -9,7 +9,7 @@ const HELP=`MoonAPI Guard — OpenAPI 3.0 compatibility checks powered by MoonBi
 Usage: node bin/moonapi-guard.mjs OLD.json NEW.json [options]
        node bin/moonapi-guard.mjs [options] -- OLD.json NEW.json
 
-  --format text|json|markdown|html|sarif  Report format (default: text)
+  --format text|json|markdown|html|sarif|csv  Report format (default: text)
   --output FILE                         Write report atomically
   --fail-on breaking|warning|none        CI policy (default: warning)
   --timeout-ms N                        Analysis timeout, 1–120000 (default: 10000)
@@ -50,12 +50,13 @@ async function main(){
   else files.push(option);
  }
  if(files.length!==2)throw Error('Provide OLD.json and NEW.json. Use --help for usage.');
- if(!['text','json','markdown','html','sarif'].includes(format))throw Error('Unknown report format.');
+ if(!['text','json','markdown','html','sarif','csv'].includes(format))throw Error('Unknown report format.');
  if(!['breaking','warning','none'].includes(policy))throw Error('Unknown --fail-on policy.');
  if(output)protectInputs(output,files);
  const inputs=files.map(file=>readDocument(file));
  const report=await runEngine(inputs,timeoutMs);
  const rendered=format==='json'?JSON.stringify(report,null,2):
+  format==='csv'?csvReport(report):
   format==='sarif'?JSON.stringify(sarifReport(report),null,2):
   format==='html'?htmlReport(report):format==='markdown'?markdownReport(report):textReport(report);
  if(output){protectInputs(output,files);atomicWrite(output,rendered+'\n');console.error('Report written to '+output);}

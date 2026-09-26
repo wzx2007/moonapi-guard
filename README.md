@@ -52,7 +52,9 @@ node bin/moonapi-guard.mjs OLD.json NEW.json --format markdown --output report.m
 node bin/moonapi-guard.mjs OLD.json NEW.json --fail-on breaking
 ```
 
-默认格式为 text；支持 text / json / markdown / html / sarif。
+默认格式为 text；支持 text / json / markdown / html / sarif / csv。
+
+使用 `--format csv --output report.csv` 可将报告导入电子表格。CSV 保留总体状态、错误和风险项；引号与多行内容会转义，可能被表格软件视为公式的值加单引号前缀。需要原始精确文本时使用 JSON 报告。
 
 文件名以 `-` 开头时，将所有选项放在 `--` 前，例如：
 `node bin/moonapi-guard.mjs --format json -- -old.json -new.json`。

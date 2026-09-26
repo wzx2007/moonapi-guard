@@ -9,6 +9,11 @@ import {htmlReport,markdownReport} from '../lib/render.mjs';
 const cwd=fileURLToPath(new URL('../',import.meta.url));
 const run=(...args)=>spawnSync(process.execPath,['bin/moonapi-guard.mjs',...args],{cwd,encoding:'utf8'});
 const inputs=['examples/old.json','examples/breaking.json'];
+test('CLI exports CSV without changing CI policy',()=>{
+ const r=run(...inputs,'--format','csv');assert.equal(r.status,1);
+ assert.match(r.stdout,/^"record_type","status"/);
+ assert.equal(r.stdout.split('\r\n').filter(x=>x.startsWith('"finding"')).length,7);
+});
 test('CLI emits machine-readable report and exit 1',()=>{const r=run(...inputs,'--format','json');assert.equal(r.status,1);const report=JSON.parse(r.stdout);assert.equal(report.breaking_count,7);assert.equal(report.complete,true);assert.equal(r.stderr,'');});
 test('compatible fixture exits 0',()=>assert.equal(run('examples/old.json','examples/compatible.json').status,0));
 test('incomplete fixture exits 3 by default',()=>assert.equal(run('examples/old.json','examples/review.json').status,3));
