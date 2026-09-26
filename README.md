@@ -43,6 +43,13 @@ node scripts/test.mjs
 
 测试工具链版本见 `TOOLCHAIN.md`。没有第三方 Mooncakes 依赖，Node 层也没有 npm 依赖。
 
+## 制作发行包
+
+在 Git 工作区先运行 `npm run verify`，确认需要发布的新文件已加入 Git，再运行
+`npm run package:release`。也可用 `node scripts/package-release.mjs OUTPUT_DIR` 指定输出目录。
+脚本只收集 Git 跟踪文件和两份预编译引擎，生成 ZIP、逐文件 SHA-256 清单及 ZIP 校验值；拒绝引擎不一致和覆盖现有发行包。
+固定文件顺序和时间戳保证相同文件字节产生相同 ZIP。打包读取工作区内容，应在干净工作区执行；不会自动构建或替代测试。
+
 ## 命令行
 
 ```sh

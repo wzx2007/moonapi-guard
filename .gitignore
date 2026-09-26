@@ -6,3 +6,4 @@ web/engine.js
 node_modules/
 coverage/
 *.log
+release/

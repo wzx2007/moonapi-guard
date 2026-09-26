@@ -6,6 +6,7 @@
   "description": "MoonBit-powered OpenAPI compatibility analyzer",
   "engines": {"node": ">=20"},
   "scripts": {
+    "package:release": "node scripts/package-release.mjs",
     "build": "node scripts/build.mjs",
     "test": "node scripts/test.mjs",
     "verify": "node scripts/verify.mjs",
